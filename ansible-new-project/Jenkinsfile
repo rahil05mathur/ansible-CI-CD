@@ -9,32 +9,21 @@ pipeline {
         vault_password_file = "~/vault.pass"
     }
 
+
     stages {
-
-        stage (create a vault password file) {
+        stage ('Create EC2 Instances') {
             steps {
-                script {
+                sshagent(credentials: [ssh_cred]) {
                     sh """
-                    openssl rand -base64 2048 > vault.pass
-                    ""
-                }
-            }
-        }
-
-        stage('mv vault file to ec2-user home directoy') {
-            steps {
-                script {
-                    sh """
-                    mv vault.pass ~/
-                    chmod 400 ~/vault.pass
+                    ansible-playbook ${ansible_playbook_path}/ec2_create.yml -i ${ansible_playbook_path}/inventory.ini --vault-password-file ${vault_password_file}
                     """
                 }
             }
         }
 
-        stage('setup ansible environment') {
-            steps {
-                script {
+    stage ('setup ansible environment') {
+        steps {
+            script {
                     sh """
                     # install python dependencies
                     pip install -r ${ansible_playbook_path}/requirements.txt
@@ -46,17 +35,17 @@ pipeline {
             }
         }
 
-        stage('Create EC2 Instances') {
+        stage ('mv vault file to ec2-user home directoy') {
             steps {
-                sshagent(credentials: [ssh_cred]) {
+                script {
                     sh """
-                    ansible-playbook ${ansible_playbook_path}/ec2_create.yml -i ${ansible_playbook_path}/inventory.ini --vault-password-file ${vault_password_file}
+                    chmod 400 ~/vault.pass
                     """
                 }
             }
         }
 
-         stage('Stop EC2 Instances') {
+        stage('Stop EC2 Instances') {
             steps {
                 sshagent(credentials: [ssh_cred]) {
                     sh """
