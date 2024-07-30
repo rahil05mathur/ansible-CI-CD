@@ -11,6 +11,13 @@ pipeline {
 
 
     stages {
+
+        stage('Checkout') {
+            steps {
+                git branch: branch, url: repo_name
+            }
+        }
+
         stage ('Create EC2 Instances') {
             steps {
                 sshagent(credentials: [ssh_cred]) {
