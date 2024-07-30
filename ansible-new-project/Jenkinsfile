@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+
+    environment {
+        repo_name = https://github.com/rahil05mathur/ansible-CI-CD
+        branch = "main"
+        ansible_playbook_path = "ansible-new-project"
+        ssh_cred = "c19604c4-3a95-4024-b03b-b6b94b02a684"
+        vault_password_file = "~/vault.pass"
+    }
+
+    stages {
+
+        stage (create a vault password file) {
+            steps {
+                script {
+                    sh """
+                    openssl rand -base64 2048 > vault.pass
+                    ""
+                }
+            }
+        }
+
+        stage('mv vault file to ec2-user home directoy') {
+            steps {
+                script {
+                    sh """
+                    mv vault.pass ~/
+                    chmod 400 ~/vault.pass
+                    """
+                }
+            }
+        }
+
+        stage('setup ansible environment') {
+            steps {
+                script {
+                    sh """
+                    # install python dependencies
+                    pip install -r ${ansible_playbook_path}/requirements.txt
+
+                    # Install Ansible Galaxy Collections
+                    ansible-galaxy collection install amazon.aws
+                    """
+                }
+            }
+        }
+
+        stage('Create EC2 Instances') {
+            steps {
+                sshagent(credentials: [ssh_cred]) {
+                    sh """
+                    ansible-playbook ${ansible_playbook_path}/ec2_create.yml -i ${ansible_playbook_path}/inventory.ini --vault-password-file ${vault_password_file}
+                    """
+                }
+            }
+        }
+
+         stage('Stop EC2 Instances') {
+            steps {
+                sshagent(credentials: [ssh_cred]) {
+                    sh """
+                    ansible-playbook ${ansible_playbook_path}/ec2_stop.yml -i ${ansible_playbook_path}/inventory.ini --vault-password-file ${vault_password_file}
+                    """
+                }
+            }
+        }
+
+    }
+}
