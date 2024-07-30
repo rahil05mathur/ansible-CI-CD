@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        repo_name = https://github.com/rahil05mathur/ansible-CI-CD
+        repo_name = "https://github.com/rahil05mathur/ansible-CI-CD"
         branch = "main"
         ansible_playbook_path = "ansible-new-project"
         ssh_cred = "c19604c4-3a95-4024-b03b-b6b94b02a684"
