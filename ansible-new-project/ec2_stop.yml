@@ -1,0 +1,15 @@
+---
+- hosts: aws_all
+  become: true
+
+
+  tasks:
+
+    - name: gathering the facts
+      ansible.builtin.debug:
+        var: gather_facts 
+        
+    - name: stop the ubuntu instances only
+      ansible.builtin.command: /sbin/shutdown -t now
+      when:
+        ansible_facts['os_family'] == "Debian"
